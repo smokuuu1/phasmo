@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Koła Fortuny - Phasmophobia</title>
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Creepster', cursive;
+      background-color: #000;
+      background-image: url('https://cdn.pixabay.com/photo/2016/10/19/20/54/grave-1755675_1280.jpg');
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-attachment: fixed;
+      background-position: center;
+      color: #fff;
+      text-align: center;
+      padding: 2rem;
+    }
+    .input-section {
+      background-color: rgba(0, 0, 0, 0.6);
+      border: 2px solid #444;
+      border-radius: 12px;
+      padding: 1rem 2rem;
+      margin: 0 auto 2rem;
+      max-width: 700px;
+    }
+    textarea {
+      width: 100%;
+      height: 60px;
+      margin: 0.5rem 0 1rem;
+      border-radius: 8px;
+      padding: 0.5rem;
+      font-size: 1rem;
+      font-family: Arial, sans-serif;
+      border: 1px solid #888;
+    }
+    .wheel-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 3rem;
+      margin-top: 2rem;
+    }
+    .wheel-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+    .arrow {
+      position: absolute;
+      top: 50%;
+      right: -20px;
+      transform: translateY(-50%) rotate(180deg);
+      width: 0;
+      height: 0;
+      border-top: 10px solid transparent;
+      border-bottom: 10px solid transparent;
+      border-left: 15px solid red;
+      z-index: 10;
+    }
+    canvas {
+      background-color: #000;
+      border-radius: 50%;
+      border: 5px solid #444;
+    }
+    .spin-button, .apply-button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background-color: #4caf50;
+      border: none;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+    .spin-button:hover, .apply-button:hover {
+      background-color: #45a049;
+    }
+    h1 { font-size: 3rem; margin-bottom: 1rem; }
+    h2 { margin: 1rem 0 0.5rem; }
+    footer { margin-top: 4rem; color: #ccc; }
+    label {
+      display: block;
+      margin-bottom: 0.3rem;
+      font-size: 1.2rem;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Koła Fortuny - Phasmophobia</h1>
+  <div class="input-section">
+    <h2>Wprowadź swoje segmenty (oddziel przecinkami)</h2>
+    <label for="mapInput">Mapa:</label>
+    <textarea id="mapInput">Tanglewood,Willow,Bleasdale,Edgefield,Grafton,Prison,School,Asylum</textarea>
+    <label for="difficultyInput">Utrudnienie:</label>
+    <textarea id="difficultyInput">Amator,Poziom 5,Profesjonalny,Koszmar,Losowa trudność,Custom 15,Brak sprzętu</textarea>
+    <label for="challengeInput">Wyzwanie:</label>
+    <textarea id="challengeInput">Brak świateł,Jedna osoba,Zakaz mówienia,Brak biegania,Tylko EMF,Tylko zdjęcia,Zero sanity</textarea>
+    <button class="apply-button" onclick="applyCustomSegments()">Zastosuj segmenty</button>
+  </div>
+  <div class="wheel-container">
+    <div>
+      <h2>Wybór Mapy</h2>
+      <div class="wheel-wrapper">
+        <canvas id="mapWheel" width="300" height="300"></canvas>
+        <div class="arrow"></div>
+      </div>
+      <br>
+      <button class="spin-button" onclick="spinWheel('map')">Losuj Mapę</button>
+    </div>
+    <div>
+      <h2>Utrudnienie</h2>
+      <div class="wheel-wrapper">
+        <canvas id="difficultyWheel" width="300" height="300"></canvas>
+        <div class="arrow"></div>
+      </div>
+      <br>
+      <button class="spin-button" onclick="spinWheel('difficulty')">Losuj Utrudnienie</button>
+    </div>
+    <div>
+      <h2>Wyzwanie</h2>
+      <div class="wheel-wrapper">
+        <canvas id="challengeWheel" width="300" height="300"></canvas>
+        <div class="arrow"></div>
+      </div>
+      <br>
+      <button class="spin-button" onclick="spinWheel('challenge')">Losuj Wyzwanie</button>
+    </div>
+  </div>
+  <footer><p>&copy; Smoku</p></footer>
+  <script>
+    const wheels = {
+      map: { canvasId: 'mapWheel', segments: [], colors: [], angle: 0, lastIndex: null },
+      difficulty: { canvasId: 'difficultyWheel', segments: [], colors: [], angle: 0, lastIndex: null },
+      challenge: { canvasId: 'challengeWheel', segments: [], colors: [], angle: 0, lastIndex: null }
+    };
+    function applyCustomSegments() {
+      wheels.map.segments = document.getElementById("mapInput").value.split(",").map(s => s.trim());
+      wheels.difficulty.segments = document.getElementById("difficultyInput").value.split(",").map(s => s.trim());
+      wheels.challenge.segments = document.getElementById("challengeInput").value.split(",").map(s => s.trim());
+      const colorList = ['#ff8080','#ffcc00','#66ccff','#cc66ff','#66ff66','#ff6666','#9999ff','#ffb366','#99ffcc','#cccc00','#00cccc'];
+      wheels.map.colors = wheels.map.segments.map((_, i) => colorList[i % colorList.length]);
+      wheels.difficulty.colors = wheels.difficulty.segments.map((_, i) => colorList[i % colorList.length]);
+      wheels.challenge.colors = wheels.challenge.segments.map((_, i) => colorList[i % colorList.length]);
+      Object.keys(wheels).forEach(key => drawWheel(key));
+    }
+    function drawWheel(key, centerText = '') {
+      const wheel = wheels[key];
+      const canvas = document.getElementById(wheel.canvasId);
+      const ctx = canvas.getContext('2d');
+      const { segments, colors } = wheel;
+      const segmentAngle = 2 * Math.PI / segments.length;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < segments.length; i++) {
+        const startAngle = wheel.angle + i * segmentAngle;
+        const endAngle = startAngle + segmentAngle;
+        ctx.beginPath();
+        ctx.moveTo(150, 150);
+        ctx.arc(150, 150, 140, startAngle, endAngle);
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.fill(); ctx.stroke();
+        ctx.save();
+        ctx.translate(150, 150);
+        ctx.rotate(startAngle + segmentAngle / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#000";
+        ctx.font = "bold 14px Arial";
+        ctx.fillText(segments[i], 130, 5);
+        ctx.restore();
+      }
+      if (centerText) {
+        ctx.save();
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 20px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(centerText, 150, 160);
+        ctx.restore();
+      }
+    }
+    function spinWheel(key) {
+      const wheel = wheels[key];
+      if (wheel.segments.length < 2) {
+        alert("Musisz podać co najmniej 2 wartości w każdym kole.");
+        return;
+      }
+      const numSegments = wheel.segments.length;
+      let newIndex;
+      do {
+        newIndex = Math.floor(Math.random() * numSegments);
+      } while (newIndex === wheel.lastIndex);
+      wheel.lastIndex = newIndex;
+      const segmentAngle = 360 / numSegments;
+      const targetAngle = 360 * 5 + (360 - newIndex * segmentAngle - segmentAngle / 2);
+      const duration = 4000;
+      const start = performance.now();
+      function animate(time) {
+        const elapsed = time - start;
+        const t = Math.min(1, elapsed / duration);
+        const easeOut = 1 - Math.pow(1 - t, 3);
+        wheel.angle = (targetAngle * easeOut) * Math.PI / 180;
+        drawWheel(key);
+        if (t < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          drawWheel(key, wheel.segments[newIndex]);
+        }
+      }
+      requestAnimationFrame(animate);
+    }
+    applyCustomSegments();
+  </script>
+</body>
+</html>
